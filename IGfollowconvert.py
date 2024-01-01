@@ -1,5 +1,5 @@
 import csv
-file="followers.csv"
+file="igfile.csv"
 # Fonction pour lire les données à partir d'un fichier CSV
 def read_csv(file):
     with open(file, 'r', newline='', encoding='utf-8') as csvfile:
@@ -8,7 +8,7 @@ def read_csv(file):
     return data
 
 # Chemin du fichier CSV
-csv_file_path = 'followers.csv'
+csv_file_path = 'igfile.csv'
 
 # Charger les données depuis le fichier CSV
 data = read_csv(csv_file_path)
@@ -21,4 +21,4 @@ with open('usernames.csv', 'w', newline='', encoding='utf-8') as csvfile:
     csvwriter = csv.writer(csvfile)
     csvwriter.writerows([[username] for username in usernames])
 
-print("Le fichier usernames.csv a été créé avec succès.")
+print("Success.")
