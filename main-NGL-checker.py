@@ -1,43 +1,48 @@
 import csv
 import requests
 from bs4 import BeautifulSoup
+import time
 
-file="usernames.csv"
-
-# Fonction pour lire les données à partir d'un fichier CSV
-def read_csv(file):
-    with open(file, 'r', newline='', encoding='utf-8') as csvfile:
-        csvreader = csv.reader(csvfile)
-        data = [row[0] for row in csvreader]  # On lit la première colonne (Username)
-    return data
-
-# Fonction pour vérifier si un utilisateur existe sur la page https://ngl.link/
-def check_user_exists(username):
-    url = f"https://ngl.link/{username}"
+def check_username(username):
+    url = f'https://ngl.link/{username}'
     response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    message = soup.find('p', class_='text-red-500')
-    
-    return "Could not find user" not in message.text if message else False
 
-# Chemin du fichier CSV
-csv_file_path = 'usernames.csv'
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        title_tag = soup.find('title')
 
-# Charger les usernames depuis le fichier CSV
-usernames = read_csv(csv_file_path)
+        if title_tag:
+            title_text = title_tag.text.strip().lower()
+            if title_text.startswith('@'):
+                return True
+            else:
+                print(f"Title does not start with '@' for {username}. Title: {title_text}")
+        else:
+            print(f"No title tag found for {username}")
+    elif response.status_code == 429:
+        print(f"Too Many Requests (429) for {username}. Retrying after 3 seconds...")
+        time.sleep(3)
+        return check_username(username)
+    else:
+        print(f"Failed to fetch {url}. Status code: {response.status_code}")
 
-# Liste pour stocker les utilisateurs valides
-valid_users = []
+    return False
 
-# Parcourir tous les utilisateurs
-for username in usernames:
-    if check_user_exists(username):
-        valid_users.append(username)
+def main():
+    input_file = 'usernames.csv'
+    output_file = 'yes.csv'
 
-# Écriture des utilisateurs valides dans un fichier CSV
-with open('yes.csv', 'w', newline='', encoding='utf-8') as csvfile:
-    csvwriter = csv.writer(csvfile)
-    csvwriter.writerow(["Username"])
-    csvwriter.writerows([[valid_user] for valid_user in valid_users])
+    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+        reader = csv.reader(infile)
+        writer = csv.writer(outfile)
 
-print("Le fichier yes.csv a été créé avec succès pour les utilisateurs valides.")
+        # Write usernames to the output file
+        for row in reader:
+            username = row[0]
+            if check_username(username):
+                writer.writerow([username])
+                # Ajouter une pause de 1 seconde entre chaque vérification
+                time.sleep(1)
+
+if __name__ == "__main__":
+    main()
